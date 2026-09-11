@@ -1,15 +1,17 @@
 # LimestoneDigital QA — Automation Framework
 
-Practical QA test task submission (Part 1). One UI test against
-[saucedemo.com](https://www.saucedemo.com/) (login → add to cart → verify cart) and one API test
-against [jsonplaceholder.typicode.com](https://jsonplaceholder.typicode.com/) (GET a resource →
-assert the response contract), built around a small Test → Business → Core layering intended to
-scale to a real suite. See [`CLAUDE.md`](CLAUDE.md) for the layer contract this was built against.
+Practical QA test task submission (Part 1). One UI scenario against
+[saucedemo.com](https://www.saucedemo.com/) (login → add to cart → verify cart), written as a
+Reqnroll/Gherkin feature, and one API test against
+[jsonplaceholder.typicode.com](https://jsonplaceholder.typicode.com/) (GET a resource → assert the
+response contract), built around a small Test → Business → Core layering intended to scale to a
+real suite. See [`CLAUDE.md`](CLAUDE.md) for the layer contract this was built against.
 
 ## Stack
 
 .NET 8, NUnit, Selenium WebDriver (Chrome, driver binary resolved automatically by Selenium
-Manager), RestSharp, `Microsoft.Extensions.Configuration` for layered settings.
+Manager), RestSharp, Reqnroll (Gherkin feature file for the UI scenario),
+`Microsoft.Extensions.Configuration` for layered settings.
 
 ## Install & run
 
@@ -25,12 +27,18 @@ dotnet build
 dotnet test
 
 # run a single test
-dotnet test --filter "FullyQualifiedName~AddItemToCartTests.AddItemToCart_ValidLogin_ItemAppearsInCart"
+dotnet test --filter "FullyQualifiedName~ShoppingCartFeature.AddAnItemToTheCart"
 dotnet test --filter "FullyQualifiedName~GetPostTests.GetPost_ExistingId_ReturnsValidContract"
 
 # run by category (Ui / Api / Smoke are tagged on both fixtures)
 dotnet test --filter "Category=Smoke"
 ```
+
+The UI scenario itself lives as Gherkin in
+[`Tests/Ui/AddItemToCart.feature`](src/LimestoneDigital.QA.Tests/Tests/Ui/AddItemToCart.feature),
+bound to step definitions in
+[`AddItemToCartSteps.cs`](src/LimestoneDigital.QA.Tests/Tests/Ui/AddItemToCartSteps.cs); Reqnroll
+generates the NUnit fixture (`ShoppingCartFeature`) from the feature file at build time.
 
 By default the UI test runs Chrome headless. To watch it run headed locally, either edit
 `appsettings.dev.json` (`Ui.Headless: false`, already set that way) and run with
@@ -88,6 +96,11 @@ build output, not source.
   public demo login, not a secret — they live in `appsettings.json` as a default. A real secret
   would never be committed; it would come only from `QA_Ui__StandardPassword` env var / CI secret
   store, and `appsettings.json` would hold a placeholder or nothing.
+- **Allure + Reqnroll without touching generated code.** Reqnroll generates the test fixture
+  (`ShoppingCartFeature`) from the `.feature` file at build time, so `[AllureNUnit]` can't be
+  hand-added to its declaration. C# merges attributes across partial class declarations, so a
+  second, hand-written `partial class ShoppingCartFeature` carries `[AllureNUnit]` instead —
+  verified in the actual Allure output (`allure-results/*-result.json`), not assumed.
 - **Skipped for time:** page-object interface abstractions, retry/wait strategy beyond a single
   explicit `WebDriverWait`, and a second UI test — one clean vertical slice per layer over broader
   coverage, per the task's own framing.
@@ -102,7 +115,7 @@ pieces of it exist in this repo today.)*
 
 | Layer | Owns | Must not contain |
 |---|---|---|
-| **Test** (`Tests/`, or `.feature` files if using Reqnroll) | NUnit `[Test]` methods / Gherkin scenarios. Reads as a business scenario. | Selectors, HTTP calls, raw `Assert.That` blocks, driver/client references. |
+| **Test** (`Tests/`) | NUnit `[Test]` methods for the API, a Reqnroll `.feature` file + step bindings for the UI. Reads as a business scenario either way. | Selectors, HTTP calls, raw `Assert.That` blocks, driver/client references. |
 | **Business** (`Business/`) | `UiSteps`, `ApiSteps`, `AssertionSteps` — orchestration, one concern per method. | Driver/HTTP client instantiation, selectors. |
 | **Core / SUT** (`Core/Sut/`) | Page objects (one per page), API clients (one per resource), DTOs/entities — everything that knows *this* system. | References to Business or Test. |
 | **Core / TAS** (`Core/Tas/`) | Driver factory & lifecycle, config loader, logger, custom matchers, generic helpers — system-agnostic. | Anything specific to saucedemo/jsonplaceholder. |
@@ -150,7 +163,10 @@ would change — they only ever see the bound `UiSettings`/`ApiSettings` object.
 - **API clients** (`Core/Sut/Api`) expose one method per operation on a resource and return typed
   DTOs — never a raw `RestResponse` leaking business meaning that Business should own.
 - **Step classes** (`Business/`) are the only callers of page objects/API clients, and the only
-  place that sequences multiple Core calls into a scenario step.
+  place that sequences multiple Core calls into a scenario step. Reqnroll step *definitions*
+  (`Tests/Ui/AddItemToCartSteps.cs`, `[Binding]`) are a Test-layer concern, not Business — they
+  translate Gherkin into calls on `UiSteps`/`AssertionSteps`, same as a plain `[Test]` method
+  would, just parsed from a `.feature` file instead of written directly in C#.
 - **Test data**: not built here (single hardcoded item name). At scale, this would be a
   `Core/Sut/*/TestData` folder holding builders/factories producing DTOs/fixtures — Business asks
   for "a valid user," not a Test method constructing a POCO inline.
@@ -199,19 +215,20 @@ should page someone for triage, not gate a merge, until its flake rate is proven
 
 ## Implemented vs. description-only
 
-**Implemented in this repo:** Test/Business/Core split as described above; one UI test
-(`AddItemToCartTests`); one API test class with two focused assertions
+**Implemented in this repo:** Test/Business/Core split as described above; one UI scenario as a
+Reqnroll feature file (`AddItemToCart.feature` + `AddItemToCartSteps.cs`, generating the
+`ShoppingCartFeature` NUnit fixture); one API test class with two focused assertions
 (`GetPostTests`); `DriverFactory` (local Chrome only); one API client
 (`JsonPlaceholderApiClient`) and three page objects (`LoginPage`, `InventoryPage`, `CartPage`);
 layered config (`appsettings.json` + env overlay + env var override); reusable `Matchers` used
 by `AssertionSteps` instead of inline `Assert.That`; `Category` traits (`Smoke`, `Ui`, `Api`) for
-CI filtering; an Allure report with step-level breakdown on the UI test (`Allure.NUnit`,
-verified generating real HTML via the Allure CLI, see [above](#allure-report)).
+CI filtering; an Allure report with step-level breakdown on both the UI and API tests
+(`Allure.NUnit`, verified generating real HTML via the Allure CLI, see [above](#allure-report)).
 
-**Description only, not built:** Reqnroll/SpecFlow feature file; container/grid execution;
-CI workflow; secrets management beyond the env-var override mechanism; screenshot-on-failure
-attachments and cross-run Allure history/trend; test data builders/factories; parallel execution
-attributes; a second UI test or second API resource.
+**Description only, not built:** container/grid execution; CI workflow; secrets management
+beyond the env-var override mechanism; screenshot-on-failure attachments and cross-run Allure
+history/trend; test data builders/factories; parallel execution attributes; a second UI test or
+second API resource.
 
 ## Improvements I'd make first, in order
 
@@ -223,7 +240,5 @@ attributes; a second UI test or second API resource.
    that's already there.
 3. A test-data builder for the UI item and API resource id, so tests stop hardcoding
    `"Sauce Labs Backpack"` / `1` inline.
-4. Reqnroll feature file for the UI scenario — the task's suggested "if time remains" item that
-   most directly improves scenario readability for non-engineers.
-5. Container/grid execution via `RemoteWebDriver`, once there's more than one browser/OS
+4. Container/grid execution via `RemoteWebDriver`, once there's more than one browser/OS
    combination worth running.

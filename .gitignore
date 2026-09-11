@@ -9,13 +9,14 @@ TestResults/
 allure-results/
 allure-report/
 
+## Reqnroll code-behind, regenerated from *.feature at build time
+*.feature.cs
+*.feature.ndjson
+
 ## IDE
 .vs/
 .vscode/
 *.suo
-
-## Driver binaries downloaded by WebDriverManager
-drivers/
 
 ## OS
 .DS_Store
