@@ -8,13 +8,14 @@ scale to a real suite. See [`CLAUDE.md`](CLAUDE.md) for the layer contract this 
 
 ## Stack
 
-.NET 8, NUnit, Selenium WebDriver (Chrome, driver binary resolved automatically by
-WebDriverManager), RestSharp, `Microsoft.Extensions.Configuration` for layered settings.
+.NET 8, NUnit, Selenium WebDriver (Chrome, driver binary resolved automatically by Selenium
+Manager), RestSharp, `Microsoft.Extensions.Configuration` for layered settings.
 
 ## Install & run
 
-Prerequisites: .NET 8 SDK, Chrome installed locally (WebDriverManager downloads the matching
-chromedriver at test run time, no manual driver setup needed).
+Prerequisites: .NET 8 SDK, Chrome installed locally (Selenium Manager, built into
+Selenium.WebDriver, resolves the matching chromedriver at test run time — no manual driver setup
+needed).
 
 ```bash
 # restore + build
@@ -92,7 +93,7 @@ Dependency direction is one-way: Test → Business → Core. SUT depends only on
 browser gets built." Today it always builds a local Chrome instance. To run the same suite in
 different places without touching Business or Test:
 
-- **Locally** — as implemented: `ChromeDriver` + `WebDriverManager` resolving the binary.
+- **Locally** — as implemented: `ChromeDriver` with Selenium Manager resolving the binary.
 - **In a container** — swap the factory to a `RemoteWebDriver` pointed at a
   `selenium/standalone-chrome` container, gated by an env var (`GRID_URL` unset = local, set =
   remote). A `Dockerfile` for the test project itself (build image, run `dotnet test` in CI) is
