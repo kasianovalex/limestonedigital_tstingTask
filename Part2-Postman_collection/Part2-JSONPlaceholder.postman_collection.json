@@ -1,0 +1,172 @@
+{
+  "info": {
+    "_postman_id": "72d6d048-45c2-4c48-954f-d5e70c7ad6d0",
+    "name": "Part 2 - JSONPlaceholder API",
+    "description": "GET requests and response validation tests required by Part 2 of the QA test task.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Get users",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const users = pm.response.json();",
+              "",
+              "pm.test(\"Response body is an array\", function () {",
+              "    pm.expect(users).to.be.an(\"array\");",
+              "});",
+              "",
+              "function expectNotEmpty(value, propertyPath) {",
+              "    pm.expect(value, `${propertyPath} must be defined`).to.not.be.undefined;",
+              "    pm.expect(value, `${propertyPath} must not be null`).to.not.equal(null);",
+              "",
+              "    if (typeof value === \"string\") {",
+              "        pm.expect(value.trim(), `${propertyPath} must not be empty`).to.not.equal(\"\");",
+              "    } else if (Array.isArray(value)) {",
+              "        pm.expect(value, `${propertyPath} must not be empty`).to.not.be.empty;",
+              "    } else if (typeof value === \"object\") {",
+              "        pm.expect(Object.keys(value), `${propertyPath} must not be empty`).to.not.be.empty;",
+              "    }",
+              "}",
+              "",
+              "pm.test(\"Every user has non-empty key properties\", function () {",
+              "    users.forEach(function (user, index) {",
+              "        const properties = {",
+              "            id: user.id,",
+              "            name: user.name,",
+              "            username: user.username,",
+              "            email: user.email,",
+              "            address: user.address,",
+              "            \"address.street\": user.address && user.address.street,",
+              "            \"address.suite\": user.address && user.address.suite,",
+              "            \"address.city\": user.address && user.address.city,",
+              "            \"address.zipcode\": user.address && user.address.zipcode,",
+              "            \"address.geo\": user.address && user.address.geo,",
+              "            \"address.geo.lat\": user.address && user.address.geo && user.address.geo.lat,",
+              "            \"address.geo.lng\": user.address && user.address.geo && user.address.geo.lng,",
+              "            phone: user.phone,",
+              "            website: user.website,",
+              "            company: user.company,",
+              "            \"company.name\": user.company && user.company.name,",
+              "            \"company.catchPhrase\": user.company && user.company.catchPhrase,",
+              "            \"company.bs\": user.company && user.company.bs",
+              "        };",
+              "",
+              "        Object.keys(properties).forEach(function (property) {",
+              "            expectNotEmpty(properties[property], `users[${index}].${property}`);",
+              "        });",
+              "    });",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/users",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "users"
+          ]
+        },
+        "description": "Returns the list of users."
+      },
+      "response": []
+    },
+    {
+      "name": "Get posts for user 1",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const posts = pm.response.json();",
+              "",
+              "pm.test(\"Response body is an array\", function () {",
+              "    pm.expect(posts).to.be.an(\"array\");",
+              "});",
+              "",
+              "function expectNotEmpty(value, propertyPath) {",
+              "    pm.expect(value, `${propertyPath} must be defined`).to.not.be.undefined;",
+              "    pm.expect(value, `${propertyPath} must not be null`).to.not.equal(null);",
+              "",
+              "    if (typeof value === \"string\") {",
+              "        pm.expect(value.trim(), `${propertyPath} must not be empty`).to.not.equal(\"\");",
+              "    } else if (Array.isArray(value)) {",
+              "        pm.expect(value, `${propertyPath} must not be empty`).to.not.be.empty;",
+              "    } else if (typeof value === \"object\") {",
+              "        pm.expect(Object.keys(value), `${propertyPath} must not be empty`).to.not.be.empty;",
+              "    }",
+              "}",
+              "",
+              "pm.test(\"Every post has non-empty key properties\", function () {",
+              "    posts.forEach(function (post, index) {",
+              "        const properties = {",
+              "            userId: post.userId,",
+              "            id: post.id,",
+              "            title: post.title,",
+              "            body: post.body",
+              "        };",
+              "",
+              "        Object.keys(properties).forEach(function (property) {",
+              "            expectNotEmpty(properties[property], `posts[${index}].${property}`);",
+              "        });",
+              "    });",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Accept",
+            "value": "application/json",
+            "type": "text"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/posts?userId=1",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "posts"
+          ],
+          "query": [
+            {
+              "key": "userId",
+              "value": "1"
+            }
+          ]
+        },
+        "description": "Returns posts belonging to user 1."
+      },
+      "response": []
+    }
+  ]
+}

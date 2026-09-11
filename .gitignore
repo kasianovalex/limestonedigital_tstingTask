@@ -1,0 +1,23 @@
+## .NET
+bin/
+obj/
+*.user
+
+## Test results
+TestResults/
+*.trx
+
+## IDE
+.vs/
+.vscode/
+*.suo
+
+## Driver binaries downloaded by WebDriverManager
+drivers/
+
+## OS
+.DS_Store
+Thumbs.db
+
+## Task reference assets (not part of the submission)
+testingFrameworkArchitechture.png
