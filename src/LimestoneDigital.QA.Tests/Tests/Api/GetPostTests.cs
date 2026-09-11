@@ -1,3 +1,5 @@
+using Allure.NUnit;
+using Allure.NUnit.Attributes;
 using LimestoneDigital.QA.Business;
 using LimestoneDigital.QA.Core.Sut.Api.Models;
 using NUnit.Framework;
@@ -6,6 +8,8 @@ using RestSharp;
 namespace LimestoneDigital.QA.Tests.Api;
 
 [TestFixture]
+[AllureNUnit]
+[AllureSuite("API")]
 [Category("Smoke")]
 [Category("Api")]
 public class GetPostTests

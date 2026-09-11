@@ -6,6 +6,8 @@ obj/
 ## Test results
 TestResults/
 *.trx
+allure-results/
+allure-report/
 
 ## IDE
 .vs/

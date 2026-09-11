@@ -49,6 +49,29 @@ dotnet test --logger "html;LogFileName=report.html"
 
 The report lands at `src/LimestoneDigital.QA.Tests/TestResults/report.html`.
 
+### Allure report
+
+`Allure.NUnit` is wired in on both fixtures (`[AllureNUnit]`), and the UI test's steps
+(login → add to cart → open cart → verify) are broken out individually via `AllureApi.Step(...)`
+so a failure shows which step it happened on, not just which test. Every `dotnet test` run writes
+raw results to `allure-results/` under the test binary's output folder
+(`src/LimestoneDigital.QA.Tests/bin/Debug/net8.0/allure-results/`).
+
+Rendering that into the actual HTML report needs the Allure CLI (Java-based) on top:
+
+```bash
+npm install -g allure-commandline   # one-time; needs a JRE on PATH
+
+cd src/LimestoneDigital.QA.Tests/bin/Debug/net8.0
+allure generate allure-results --clean -o allure-report   # writes static HTML
+allure open allure-report                                  # or: allure serve allure-results
+```
+
+Verified end to end this session (installed a JRE + `allure-commandline` and generated a real
+report from a live `dotnet test` run) — this isn't just wired in and hoped, the pipeline runs.
+`allure-results/` and `allure-report/` are gitignored, same as `TestResults/`, since they're
+build output, not source.
+
 ## Design decisions
 
 - **Test → Business → Core, one-way.** Tests read as scenarios (`Login → AddItemToCart →
@@ -147,15 +170,16 @@ run) to stay parallel-safe once the suite grows past hand-picked read-only data.
 
 ### Failure reporting & triage
 
-Implemented: TRX (machine-readable) + optional HTML report via the built-in `dotnet test` logger,
-plus NUnit's assertion messages built through the `Matchers` helpers (each failure states which
-field/element and what was expected vs. actual).
+Implemented: TRX (machine-readable) + optional HTML report via the built-in `dotnet test` logger;
+an Allure report with per-test step breakdown (`AllureApi.Step`) so a UI failure shows exactly
+which step it happened on; and NUnit's assertion messages built through the `Matchers` helpers
+(each failure states which field/element and what was expected vs. actual).
 
 Not implemented, described only: a screenshot-on-failure hook (`TearDown` capturing a screenshot
-when `TestContext.CurrentContext.Result.Outcome` is a failure, attached to the TRX/Allure report),
-structured logging around each Business step (so a failure log reads as a timeline: "logged in →
-added item → cart open → assertion failed"), and a dashboard (Allure/ReportPortal) aggregating
-runs over time so a flaky test is visible as flaky rather than rediscovered each time.
+when `TestContext.CurrentContext.Result.Outcome` is a failure, attached to the Allure report via
+`AllureApi.AddAttachment`); and trend/history across runs (Allure supports a `history` folder
+carried between CI runs so flaky tests become visible as flaky instead of being rediscovered each
+time — a single local run doesn't have that history yet).
 
 **Test problem vs. product bug**, the way I'd triage without those tools yet: a test-side failure
 throws from Core (`NoSuchElementException`, timeout, connection error) — the site/API structure
@@ -181,19 +205,22 @@ should page someone for triage, not gate a merge, until its flake rate is proven
 (`JsonPlaceholderApiClient`) and three page objects (`LoginPage`, `InventoryPage`, `CartPage`);
 layered config (`appsettings.json` + env overlay + env var override); reusable `Matchers` used
 by `AssertionSteps` instead of inline `Assert.That`; `Category` traits (`Smoke`, `Ui`, `Api`) for
-CI filtering.
+CI filtering; an Allure report with step-level breakdown on the UI test (`Allure.NUnit`,
+verified generating real HTML via the Allure CLI, see [above](#allure-report)).
 
 **Description only, not built:** Reqnroll/SpecFlow feature file; container/grid execution;
-CI workflow; secrets management beyond the env-var override mechanism; screenshot-on-failure and
-structured step logging; a dashboard/report aggregator; test data builders/factories; parallel
-execution attributes; a second UI test or second API resource.
+CI workflow; secrets management beyond the env-var override mechanism; screenshot-on-failure
+attachments and cross-run Allure history/trend; test data builders/factories; parallel execution
+attributes; a second UI test or second API resource.
 
 ## Improvements I'd make first, in order
 
-1. `[Parallelizable]` at the assembly level + a smoke-tier CI workflow — cheapest wins, unlocks
-   fast PR feedback.
-2. Screenshot-on-failure in `UiSteps.TearDown` — biggest triage-time improvement for the least
-   code.
+1. `[Parallelizable]` at the assembly level + a smoke-tier CI workflow that also publishes the
+   Allure report as a build artifact — cheapest wins, unlocks fast PR feedback with a report
+   attached.
+2. Screenshot-on-failure via `AllureApi.AddAttachment` in `UiSteps.TearDown` — biggest
+   triage-time improvement for the least code, and it's a natural extension of the Allure wiring
+   that's already there.
 3. A test-data builder for the UI item and API resource id, so tests stop hardcoding
    `"Sauce Labs Backpack"` / `1` inline.
 4. Reqnroll feature file for the UI scenario — the task's suggested "if time remains" item that
