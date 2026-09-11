@@ -10,7 +10,8 @@ real suite. See [`CLAUDE.md`](CLAUDE.md) for the layer contract this was built a
 ## Stack
 
 .NET 8, NUnit, Selenium WebDriver (Chrome, driver binary resolved automatically by Selenium
-Manager), RestSharp, Reqnroll (Gherkin feature file for the UI scenario),
+Manager), RestSharp, Reqnroll — SpecFlow's maintained successor, see
+[below](#specflow-vs-reqnroll) — for the UI scenario's Gherkin feature file, and
 `Microsoft.Extensions.Configuration` for layered settings.
 
 ## Install & run
@@ -105,6 +106,24 @@ build output, not source.
 - **Skipped for time:** page-object interface abstractions, retry/wait strategy beyond a single
   explicit `WebDriverWait`, and a second UI test — one clean vertical slice per layer over broader
   coverage, per the task's own framing.
+
+### SpecFlow vs. Reqnroll
+
+The task names SpecFlow; this repo uses **Reqnroll**, which is the same thing under a new name —
+reqnroll.net describes itself as "a reboot of the SpecFlow project," same Gherkin syntax, same
+`[Binding]` / `[Given]` / `[When]` / `[Then]` model, and it ships an official SpecFlow migration
+guide. Substituting it was a deliberate call, not a preference:
+
+- SpecFlow's last stable release, **3.9.74, was published 2022-05-03** — it has had no release in
+  over four years.
+- `SpecFlow.NUnit` 3.9.74 declares dependency groups only up to **`net6.0`** and pins **NUnit
+  3.13.1**. This project targets `net8.0` on NUnit 4.6.1, so SpecFlow would have meant either
+  downgrading the whole test stack or running an unsupported combination.
+
+So "SpecFlow feature file for the UI scenario" — the task's own optional item — is delivered, on
+the maintained package. If a SpecFlow-branded dependency is specifically wanted, the migration is
+mechanical in reverse: rename the `Reqnroll` namespace to `TechTalk.SpecFlow`, swap the package,
+and pin NUnit back to 3.x.
 
 ## Framework structure
 
