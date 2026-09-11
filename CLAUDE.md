@@ -12,16 +12,19 @@ a documented rationale.
 ## Stack
 
 - .NET 8, NUnit
-- Selenium WebDriver — UI
+- Selenium WebDriver — UI (driver binary resolved by Selenium Manager, no WebDriverManager)
 - RestSharp — API
-- Reqnroll (optional) — BDD feature file for the UI scenario only
+- Reqnroll — BDD feature file for the UI scenario only
+- Allure.NUnit — reporting
 
 ## Commands
 
 - Build: `dotnet build`
 - Run full suite: `dotnet test`
 - Run one test: `dotnet test --filter "FullyQualifiedName~ClassName.MethodName"`
-- Report: TRX under `TestResults/`; HTML via `dotnet test --logger "html;LogFileName=report.html"`
+- Report: TRX under `TestResults/`; HTML via `dotnet test --logger "html;LogFileName=report.html"`;
+  Allure results under `bin/Debug/net8.0/allure-results/`, rendered with
+  `allure generate allure-results --clean -o allure-report` (Allure CLI, needs a JRE)
 
 ## Architecture (3 layers — target design, only partially built in this submission)
 
@@ -58,11 +61,13 @@ client, logger).
 
 ## Implemented vs. described-only in this submission
 
-**Implemented:** minimal Test/Business/Core split, one UI test, one API test, base driver factory,
-one page object, one API client.
+**Implemented:** minimal Test/Business/Core split, one UI scenario (Reqnroll feature +
+step bindings), one API test class, driver factory, three page objects, one API client, layered
+config, Core/TAS matchers, Allure reporting.
 
-**Described only in README, not built:** CI workflow, Docker/grid execution, secrets management,
-parallel execution config, reporting/dashboarding beyond the default TRX/HTML report.
+**Described only in `FrameworkStructure.md`, not built:** CI workflow, Docker/grid execution,
+secrets management beyond the env-var override, parallel execution config, screenshot-on-failure
+attachments, cross-run Allure history/trend, test data builders.
 
 ## When extending this repo
 
@@ -70,5 +75,5 @@ parallel execution config, reporting/dashboarding beyond the default TRX/HTML re
   `Business/UiSteps`, new `[Test]` or feature step under `Tests`.
 - Adding a new API check → new/extended client under `Core/SUT/Api`, new step(s) under
   `Business/ApiSteps`.
-- Never add a new top-level layer without updating this file and the README's
-  "Framework structure" section.
+- Never add a new top-level layer without updating this file and `FrameworkStructure.md`
+  (which holds the layer/ownership answer the submission is graded on).
